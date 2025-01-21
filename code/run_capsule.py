@@ -2,7 +2,10 @@ import sys
 import logging
 import json
 import shutil
+import time
 from pathlib import Path
+
+import numpy as np
 
 from aind_data_schema.core.quality_control import QualityControl
 
@@ -15,6 +18,8 @@ logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(message)s")
 
 
 if __name__ == "__main__":
+    logging.info("\nEPHYS QC COLLECTION")
+    t_qc_start_all = time.perf_counter()
 
     # find quality_metrics JSON files in data_folder
     quality_control_json_files = [
@@ -52,4 +57,9 @@ if __name__ == "__main__":
 
     with (results_folder / f"quality_control.json").open("w") as f:
         f.write(quality_control.model_dump_json(indent=3))
+
+    t_qc_end_all = time.perf_counter()
+    elapsed_time_qc_all = np.round(t_qc_end_all - t_qc_start_all, 2)
+
+    logging.info(f"EPHYS QC COLLECTION time: {elapsed_time_qc_all}s")
 

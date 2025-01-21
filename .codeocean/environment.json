@@ -11,6 +11,10 @@
 				{
 					"name": "aind-data-schema",
 					"version": "1.3.0"
+				},
+				{
+					"name": "numpy",
+					"version": "1.24.4"
 				}
 			],
 			"options": {},
