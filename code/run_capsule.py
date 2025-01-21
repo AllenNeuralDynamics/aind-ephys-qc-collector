@@ -25,15 +25,15 @@ if __name__ == "__main__":
     quality_control_json_files = [
         p for p in data_folder.iterdir() if p.name.startswith("quality_control") and p.suffix == ".json"
     ]
+    # this ensures that metrics are also sorted by recording name
     quality_control_json_files = sorted(quality_control_json_files)
 
     logging.info(f"Found {len(quality_control_json_files)} quality control files")
-    evaluations = []
+    main_qc = None
 
     for quality_control_json_file in quality_control_json_files:
         # json file names are: quality_control_{recording_name}.json
         recording_name = "_".join(quality_control_json_file.name.split("_")[2:])[:-5]
-        logging.info(f"\tMerging metrics for {recording_name}")
 
         # copy figures
         input_figure_folder = data_folder / f"quality_control_{recording_name}"
@@ -50,13 +50,23 @@ if __name__ == "__main__":
 
         # load qc and append evaluations
         qc = QualityControl(**json.loads(qc_json_str))
-        evaluations.extend(qc.evaluations)
+        if main_qc is None:
+            main_qc = qc
+        else:
+            main_eval_names = [ev.name for ev in main_qc.evaluations]
+            for ev in qc.evaluations:
+                if ev.name in main_eval_names:
+                    eval_index = main_eval_names.index(ev.name)
+                    main_qc.evaluations[eval_index].metrics.extend(ev.metrics)
+                else:
+                    main_qc.evaluations.extend(ev)
 
     # write final quality_metrics.json
-    quality_control = QualityControl(evaluations=evaluations)
+    for ev in main_qc.evaluations:
+        logging.info(f"\tCollected {len(ev.metrics)} metrics for '{ev.name}' evaluation")
 
     with (results_folder / f"quality_control.json").open("w") as f:
-        f.write(quality_control.model_dump_json(indent=3))
+        f.write(main_qc.model_dump_json(indent=3))
 
     t_qc_end_all = time.perf_counter()
     elapsed_time_qc_all = np.round(t_qc_end_all - t_qc_start_all, 2)
