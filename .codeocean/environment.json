@@ -1,6 +1,6 @@
 {
 	"version": 1,
-	"base_image": "codeocean/jupyterlab:3.0.9-miniconda4.9.2-python3.8-ubuntu20.04",
+	"base_image": "codeocean/mambaforge3:23.1.0-4-python3.10.12-ubuntu22.04",
 	"options": {
 		"registry_host_arg": true,
 		"git_ask_pass": true
@@ -14,7 +14,7 @@
 				},
 				{
 					"name": "numpy",
-					"version": "1.26.4"
+					"version": "2.2.3"
 				}
 			],
 			"options": {},
