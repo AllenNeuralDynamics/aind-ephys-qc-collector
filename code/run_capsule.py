@@ -59,7 +59,7 @@ if __name__ == "__main__":
                     eval_index = main_eval_names.index(ev.name)
                     main_qc.evaluations[eval_index].metrics.extend(ev.metrics)
                 else:
-                    main_qc.evaluations.extend(ev)
+                    main_qc.evaluations.append(ev)
 
     # write final quality_metrics.json
     for ev in main_qc.evaluations:
