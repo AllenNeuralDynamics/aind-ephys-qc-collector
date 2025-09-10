@@ -31,9 +31,13 @@ if __name__ == "__main__":
     logging.info(f"Found {len(quality_control_json_files)} quality control files")
     main_qc = None
 
+    recording_names = []
+    all_metrics = []
+    default_grouping = []
     for quality_control_json_file in quality_control_json_files:
         # json file names are: quality_control_{recording_name}.json
         recording_name = "_".join(quality_control_json_file.name.split("_")[2:])[:-5]
+        recording_names.append(recording_name)
 
         # copy figures
         input_figure_folder = data_folder / f"quality_control_{recording_name}"
@@ -50,23 +54,21 @@ if __name__ == "__main__":
 
         # load qc and append evaluations
         qc = QualityControl(**json.loads(qc_json_str))
-        if main_qc is None:
-            main_qc = qc
-        else:
-            main_eval_names = [ev.name for ev in main_qc.evaluations]
-            for ev in qc.evaluations:
-                if ev.name in main_eval_names:
-                    eval_index = main_eval_names.index(ev.name)
-                    main_qc.evaluations[eval_index].metrics.extend(ev.metrics)
-                else:
-                    main_qc.evaluations.append(ev)
+        all_metrics.extend(qc.metrics)
+        default_grouping.extend(qc.default_grouping)
 
-    # write final quality_metrics.json
-    for ev in main_qc.evaluations:
-        logging.info(f"\tCollected {len(ev.metrics)} metrics for '{ev.name}' evaluation")
+    # create main QC with all metrics and detault tags
+    default_grouping = sorted(list(set(default_grouping)))
+    logging.info(f"\tCollected {len(all_metrics)} metrics for {len(default_grouping)} tags and {len(recording_names)} streams.")
+    # add recording names for grouping
+    default_grouping.extend(recording_names)
 
-    with (results_folder / f"quality_control.json").open("w") as f:
-        f.write(main_qc.model_dump_json(indent=3))
+    main_qc = QualityControl(
+        metrics=all_metrics,
+        default_grouping=default_grouping
+    )
+    
+    main_qc.write_standard_file(output_directory=results_folder)
 
     t_qc_end_all = time.perf_counter()
     elapsed_time_qc_all = np.round(t_qc_end_all - t_qc_start_all, 2)
