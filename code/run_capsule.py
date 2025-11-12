@@ -1,4 +1,5 @@
 import sys
+import re
 import logging
 import json
 import shutil
@@ -34,14 +35,36 @@ if __name__ == "__main__":
     recording_names = []
     all_metrics = []
     default_grouping = []
+    recording_segments = []
     for quality_control_json_file in quality_control_json_files:
         # json file names are: quality_control_{recording_name}.json
         recording_name = "_".join(quality_control_json_file.name.split("_")[2:])[:-5]
         recording_names.append(recording_name)
+        recording_segments.append(recording_name.split("_")[-1])
+
+    drop_recording_segment = len(set(recording_segments)) == 1
+    if drop_recording_segment:
+        logging.info(
+            "All recording segments are the same. Dropping recording segment from recording name."
+        )
+
+    for quality_control_json_file in quality_control_json_files:
+        # load original QC to retrieve abbreviated recording name (default_grouping)
+        recording_name = "_".join(quality_control_json_file.name.split("_")[2:])[:-5]
+        with open(quality_control_json_file) as f:
+            original_qc_data = json.load(f)
+        original_qc = QualityControl(**original_qc_data)
+        abbrv_recording_name = original_qc.default_grouping[0]
+
+        if drop_recording_segment:
+            recording_str = f"_{recording_segments[0]}"
+            new_recording_name = abbrv_recording_name.replace(recording_str, "")
+        else:
+            new_recording_name = abbrv_recording_name
 
         # copy figures
         input_figure_folder = data_folder / f"quality_control_{recording_name}"
-        output_figure_folder = results_folder / "quality_control" / recording_name
+        output_figure_folder = results_folder / "quality_control" / new_recording_name
         output_figure_folder.mkdir(parents=True, exist_ok=True)
 
         for fig_file in input_figure_folder.iterdir():
@@ -50,7 +73,10 @@ if __name__ == "__main__":
 
         # read json and remap reference strings
         qc_json_str = json.dumps(json.load(open(quality_control_json_file)))
-        qc_json_str = qc_json_str.replace(f"quality_control_{recording_name}", f"quality_control/{recording_name}")
+        qc_json_str = qc_json_str.replace(f"quality_control_{recording_name}", f"quality_control/{new_recording_name}")
+        if drop_recording_segment:
+            # replace all segment entries except for zarr paths
+            qc_json_str = re.sub(rf"{recording_str}(?!\.zarr)", "", qc_json_str)
 
         # load qc and append evaluations
         qc = QualityControl(**json.loads(qc_json_str))
@@ -58,10 +84,7 @@ if __name__ == "__main__":
         default_grouping.extend(qc.default_grouping)
 
     # create main QC with all metrics and detault tags
-    default_grouping = sorted(list(set(default_grouping)))
     logging.info(f"\tCollected {len(all_metrics)} metrics for {len(default_grouping)} tags and {len(recording_names)} streams.")
-    # add recording names for grouping
-    default_grouping.extend(recording_names)
 
     main_qc = QualityControl(
         metrics=all_metrics,
