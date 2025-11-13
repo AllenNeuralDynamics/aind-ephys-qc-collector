@@ -40,7 +40,7 @@ if __name__ == "__main__":
         # json file names are: quality_control_{recording_name}.json
         recording_name = "_".join(quality_control_json_file.name.split("_")[2:])[:-5]
         recording_names.append(recording_name)
-        if "group" in recording_name"
+        if "group" in recording_name:
             segment_str = recording_name.split("_")[-2]
         else:
             segment_str = recording_name.split("_")[-1]
