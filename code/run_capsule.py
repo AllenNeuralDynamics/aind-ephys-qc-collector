@@ -79,8 +79,8 @@ if __name__ == "__main__":
         qc_json_str = json.dumps(json.load(open(quality_control_json_file)))
         qc_json_str = qc_json_str.replace(f"quality_control_{recording_name}", f"quality_control/{new_recording_name}")
         if drop_recording_segment:
-            # replace all segment entries except for zarr paths
-            qc_json_str = re.sub(rf"{recording_str}(?!\.zarr)", "", qc_json_str)
+            # replace all segment entries except when segment string is in a zarr paths
+            qc_json_str = re.sub(rf"{re.escape(recording_str)}(?!(?:(?!/).)*\.zarr)", "", qc_json_str)
 
         # load qc and append evaluations
         qc = QualityControl(**json.loads(qc_json_str))
