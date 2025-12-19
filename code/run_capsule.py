@@ -58,7 +58,7 @@ if __name__ == "__main__":
         with open(quality_control_json_file) as f:
             original_qc_data = json.load(f)
         original_qc = QualityControl(**original_qc_data)
-        abbrv_recording_name = original_qc.default_grouping[0]
+        abbrv_recording_name = original_qc.metrics[0].tags["probe"]
 
         if drop_recording_segment:
             recording_str = f"_{recording_segments[0]}"
@@ -85,14 +85,13 @@ if __name__ == "__main__":
         # load qc and append evaluations
         qc = QualityControl(**json.loads(qc_json_str))
         all_metrics.extend(qc.metrics)
-        default_grouping.extend(qc.default_grouping)
 
     # create main QC with all metrics and detault tags
     logging.info(f"\tCollected {len(all_metrics)} metrics for {len(default_grouping)} tags and {len(recording_names)} streams.")
 
     main_qc = QualityControl(
         metrics=all_metrics,
-        default_grouping=default_grouping
+        default_grouping=[("probe"), ("stage")]
     )
     
     main_qc.write_standard_file(output_directory=results_folder)
