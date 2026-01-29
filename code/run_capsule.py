@@ -52,6 +52,7 @@ if __name__ == "__main__":
             "All recording segments are the same. Dropping recording segment from recording name."
         )
 
+    allow_tag_failures = []
     for quality_control_json_file in quality_control_json_files:
         # load original QC to retrieve abbreviated recording name (default_grouping)
         recording_name = "_".join(quality_control_json_file.name.split("_")[2:])[:-5]
@@ -85,13 +86,18 @@ if __name__ == "__main__":
         # load qc and append evaluations
         qc = QualityControl(**json.loads(qc_json_str))
         all_metrics.extend(qc.metrics)
+        allow_tag_failures.extend(qc.allow_tag_failures)
 
     # create main QC with all metrics and detault tags
-    logging.info(f"\tCollected {len(all_metrics)} metrics for {len(default_grouping)} tags and {len(recording_names)} streams.")
+    logging.info(
+        f"\tCollected {len(all_metrics)} metrics for {len(default_grouping)} tags and {len(recording_names)} streams."
+    )
+    logging.info(f"\tTags allowed to fail: {allow_tag_failures}")
 
     main_qc = QualityControl(
         metrics=all_metrics,
-        default_grouping=[("probe"), ("stage")]
+        default_grouping=[("probe"), ("stage")],
+        allow_tag_failures=allow_tag_failures
     )
     
     main_qc.write_standard_file(output_directory=results_folder)
