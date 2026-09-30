@@ -1,4 +1,4 @@
-# hash:sha256:b2d156f9ebb15b418f77c78b4833dbe062580ed15ed62112020eae4804a35a95
+# hash:sha256:811ae7c1ed9441122d5bd8d1efb50d22716c7961d0bebe257a7bf293f927cd0e
 ARG REGISTRY_HOST
 FROM $REGISTRY_HOST/codeocean/mambaforge3:23.1.0-4-python3.10.12-ubuntu22.04
 
@@ -8,5 +8,5 @@ COPY git-ask-pass /
 
 RUN pip install -U --no-cache-dir \
     aind-data-schema==2.8.1 \
-    log-schema \
+    log-schema==0.2.10.dev1 \
     numpy==2.2.3
