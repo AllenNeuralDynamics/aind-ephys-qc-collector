@@ -21,11 +21,8 @@ parser = argparse.ArgumentParser(description="Compute Quality Control for Ephys 
 parser.add_argument("--params", default=None, help="Path to the parameters file or JSON string. If given, it will override all other arguments.")
 
 
-logging.basicConfig(level=logging.INFO, stream=sys.stdout, format="%(message)s")
-
 
 def run() -> None:
-    logging.info("\nEPHYS QC COLLECTION")
     t_qc_start_all = time.perf_counter()
 
     args = parser.parse_args()
@@ -83,6 +80,7 @@ def run() -> None:
 
     logging.info("Begin processing...", extra={"event_type": "stage_start"})
 
+    logging.info("\nEPHYS QC COLLECTION")
     # find quality_metrics JSON files in data_folder
     quality_control_json_files = [
         p for p in data_folder.iterdir() if p.name.startswith("quality_control") and p.suffix == ".json"
