@@ -165,6 +165,8 @@ def run() -> None:
     elapsed_time_qc_all = np.round(t_qc_end_all - t_qc_start_all, 2)
 
     logging.info(f"EPHYS QC COLLECTION time: {elapsed_time_qc_all}s")
+    logging.info("Pipeline stage completed", extra={"event_type": "stage_complete"})
+    
 
 
 if __name__ == "__main__":
