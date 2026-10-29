@@ -12,7 +12,7 @@ The `data/` folder must include the pairs of `quality_control_{recording_name}.j
 
 ### Parameters
 
-The `code/run` script takes no arguments.
+Parameters are read from a `params.json` file that must be in the root folder of the capsule (next to `code/`, i.e. `../params.json` from `code/`) (only the `logging` section is used).
 
 
 ### Output

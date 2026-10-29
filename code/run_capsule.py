@@ -1,4 +1,3 @@
-import argparse
 import sys
 import re
 import logging
@@ -15,58 +14,32 @@ from aind_data_schema.core.quality_control import QualityControl
 data_folder = Path("../data")
 results_folder = Path("../results")
 
-# Define argument parser
-parser = argparse.ArgumentParser(description="Compute Quality Control for Ephys pipeline")
-
-parser.add_argument("--params", default=None, help="Path to the parameters file or JSON string. If given, it will override all other arguments.")
-
+PARAMS_FILE = Path("../params.json")
 
 
 def run() -> None:
     t_qc_start_all = time.perf_counter()
 
-    args = parser.parse_args()
-    PARAMS = args.params
-
-    if PARAMS is not None:
-        try:
-            # try to parse the JSON string first to avoid file name too long error
-            qc_collector_params = json.loads(PARAMS)
-        except json.JSONDecodeError:
-            if Path(PARAMS).is_file():
-                with open(PARAMS, "r") as f:
-                    qc_collector_params = json.load(f)
-            else:
-                raise ValueError(f"Invalid parameters: {PARAMS} is not a valid JSON string or file path")
-    else:
-        with open("params.json", "r") as f:
-            qc_collector_params = json.load(f)
-
-    # TODO: temporary - remove from params.json when logging is distributed by pipeline
-    LOGGING = qc_collector_params.pop("logging", None)
+    if not PARAMS_FILE.is_file():
+        raise ValueError(f"Parameters file not found: {PARAMS_FILE}")
+    with open(PARAMS_FILE, "r") as f:
+        full_params = json.load(f)
+    logging_params = full_params.get("logging", None)
 
     # setup logging before any other logging call
-    if LOGGING is None:
+    if logging_params is None:
         logging.basicConfig(level="INFO", stream=sys.stdout, format="%(message)s")
     else:
-        if LOGGING["package"] == "logging":
-            logging_cfg = LOGGING.get("logging_cfg", {})
+        if logging_params["package"] == "logging":
+            logging_cfg = logging_params.get("logging_cfg", {})
             logging.basicConfig(stream=sys.stdout, **logging_cfg)
-        elif LOGGING["package"] == "log-schema":
+        elif logging_params["package"] == "log-schema":
             import log_schema
 
-            pipeline_name = LOGGING.get("pipeline_name", "AIND Ephys Pipeline")
-            acquisition_name = LOGGING.get("acquisition_name", None)
+            pipeline_name = logging_params.get("pipeline_name", "AIND Ephys Pipeline")
+            acquisition_name = logging_params.get("acquisition_name", "unknown")
 
-            if acquisition_name is None:
-                data_description_json = list(data_folder.glob("**/*data_description.json"))
-                if len(data_description_json) > 0:
-                    data_description_json = data_description_json[0]
-                    with open(data_description_json, "r") as f:
-                        data_description = json.load(f)
-                    acquisition_name = data_description["name"]
-
-            config = LOGGING.get("logging_cfg")
+            config = logging_params.get("logging_cfg")
             if config is not None and len(config) == 0:
                 config = None
             log_schema.setup_logging(
