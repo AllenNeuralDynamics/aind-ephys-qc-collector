@@ -8,7 +8,7 @@ from pathlib import Path
 
 import numpy as np
 
-from aind_data_schema.core.quality_control import QualityControl
+from aind_data_schema.core.quality_control import QualityControl, Stage
 
 
 data_folder = Path("../data")
@@ -119,6 +119,21 @@ def run() -> None:
         qc = QualityControl(**json.loads(qc_json_str))
         all_metrics.extend(qc.metrics)
         allow_tag_failures.extend(qc.allow_tag_failures)
+
+    # re-processing an asset (e.g. curation pipeline): keep the raw-data metrics of its QC, which are not recomputed
+    previous_qc_folder = data_folder / "previous_qc"
+    if (previous_qc_folder / "quality_control.json").is_file():
+        with open(previous_qc_folder / "quality_control.json") as f:
+            previous_qc = QualityControl(**json.load(f))
+        raw_metrics = [m for m in previous_qc.metrics if m.stage == Stage.RAW]
+        for metric in raw_metrics:
+            # references are relative to the asset root: quality_control/{probe}/{figure}
+            if metric.reference is not None and (previous_qc_folder / metric.reference).is_file():
+                (results_folder / metric.reference).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy(previous_qc_folder / metric.reference, results_folder / metric.reference)
+        all_metrics = raw_metrics + all_metrics
+        allow_tag_failures.extend(t for t in previous_qc.allow_tag_failures if t not in allow_tag_failures)
+        logging.info(f"\tInherited {len(raw_metrics)} raw-data metrics from the previous QC")
 
     # create main QC with all metrics and detault tags
     logging.info(
